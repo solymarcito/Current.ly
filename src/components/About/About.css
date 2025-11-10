@@ -1,0 +1,98 @@
+.about {
+  padding: var(--spacing-2xl) 0;
+  background-color: var(--bg-color);
+}
+
+.mission {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.mission h3 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+}
+
+.mission-statement {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  font-style: italic;
+}
+
+.problem {
+  margin-bottom: var(--spacing-xl);
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.problem h3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+}
+
+.problem p {
+  margin-bottom: var(--spacing-md);
+  line-height: 1.8;
+  color: var(--text-light);
+}
+
+.values {
+  margin-top: var(--spacing-xl);
+}
+
+.values h3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-color);
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.value-card {
+  background-color: var(--bg-light);
+  padding: var(--spacing-lg);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.value-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
+}
+
+.value-card h4 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-sm);
+  color: var(--primary-color);
+}
+
+.value-card p {
+  line-height: 1.7;
+  color: var(--text-light);
+}
+
+@media (max-width: 768px) {
+  .mission-statement {
+    font-size: 1.25rem;
+  }
+
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

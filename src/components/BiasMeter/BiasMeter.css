@@ -1,0 +1,122 @@
+.bias-meter {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  padding: var(--spacing-sm);
+}
+
+.gauge-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.gauge-wrapper svg {
+  width: 100%;
+  height: auto;
+  max-width: 300px;
+}
+
+/* Hide all percentage labels and tick values in the gauge SVG */
+.gauge-wrapper svg > g > text {
+  display: none !important;
+}
+
+.gauge-wrapper svg text[class*="tick"] {
+  display: none !important;
+}
+
+.gauge-wrapper svg text[class*="label"] {
+  display: none !important;
+}
+
+
+.gauge-labels-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding-top: 10%;
+}
+
+.label {
+  position: absolute;
+  color: #9ca3af;
+  font-size: 0.7rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.label-line {
+  display: block;
+  white-space: nowrap;
+}
+
+.label.active {
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+/* Position labels on top of the arc, following the curve of the semicircle */
+/* For a semicircle: 0% is bottom-left, 50% is top-center, 100% is bottom-right */
+.label-left {
+  left: 8%;
+  top: 45%;
+  transform: translateX(-50%);
+}
+
+.label-mid-left {
+  left: 25%;
+  top: 20%;
+  transform: translateX(-50%);
+}
+
+.label-center {
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.label-mid-right {
+  right: 25%;
+  top: 20%;
+  transform: translateX(50%);
+}
+
+.label-right {
+  right: 8%;
+  top: 45%;
+  transform: translateX(50%);
+}
+
+@media (max-width: 768px) {
+  .bias-meter {
+    max-width: 250px;
+  }
+
+  .gauge-wrapper {
+    max-width: 250px;
+  }
+
+  .label {
+    font-size: 0.6rem;
+  }
+
+  .label.active {
+    font-size: 0.65rem;
+  }
+}
