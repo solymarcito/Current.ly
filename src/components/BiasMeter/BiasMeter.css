@@ -120,3 +120,33 @@
     font-size: 0.65rem;
   }
 }
+
+.bias-words-section {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--bg-light);
+  border-radius: 8px;
+}
+
+.bias-words-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.bias-words-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.bias-word-tag {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--primary-color);
+  color: white;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}

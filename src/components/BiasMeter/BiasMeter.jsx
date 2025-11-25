@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import GaugeComponent from 'react-gauge-component'
 import './BiasMeter.css'
 
-const BiasMeter = ({ value = 50, country = null }) => {
+const BiasMeter = ({ value = 50, country = null, biasWords = [] }) => {
   const [biasValue, setBiasValue] = useState(value)
 
   useEffect(() => {
@@ -103,6 +103,18 @@ const BiasMeter = ({ value = 50, country = null }) => {
           </span>
         </div>
       </div>
+      {biasWords && biasWords.length > 0 && (
+        <div className="bias-words-section">
+          <h4 className="bias-words-title">Potential Bias Words Detected:</h4>
+          <div className="bias-words-list">
+            {biasWords.map((word, index) => (
+              <span key={index} className="bias-word-tag">
+                {word}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -19,7 +19,14 @@ const Navbar = () => {
     setIsOpen(false)
     const element = document.getElementById(targetId)
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
+      const navbarHeight = 70 // Approximate navbar height
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+      const offsetPosition = elementPosition - navbarHeight
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
     }
   }
 
@@ -31,6 +38,7 @@ const Navbar = () => {
         </div>
         <ul className={`nav-menu ${isOpen ? 'open' : ''}`}>
           <li><a href="#home" onClick={(e) => handleNavClick(e, 'home')}>Home</a></li>
+          <li><a href="#chatbot" onClick={(e) => handleNavClick(e, 'chatbot')}>Try AI</a></li>
           <li><a href="#about" onClick={(e) => handleNavClick(e, 'about')}>About</a></li>
           <li><a href="#features" onClick={(e) => handleNavClick(e, 'features')}>Features</a></li>
           <li><a href="#testimonials" onClick={(e) => handleNavClick(e, 'testimonials')}>Testimonials</a></li>

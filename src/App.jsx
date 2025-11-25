@@ -11,12 +11,28 @@ import Footer from './components/Footer/Footer'
 import ReadingLevelModal from './components/ReadingLevelModal/ReadingLevelModal'
 import AccessibleLanguageModal from './components/AccessibleLanguageModal/AccessibleLanguageModal'
 import Chatbot from './components/Chatbot/Chatbot'
+import NewsFeed from './components/NewsFeed/NewsFeed'
 import './App.css'
 
 function App() {
   const [isReadingLevelModalOpen, setIsReadingLevelModalOpen] = useState(false)
   const [isAccessibleLanguageModalOpen, setIsAccessibleLanguageModalOpen] = useState(false)
   const [readingLevel, setReadingLevel] = useState('middle')
+  const [relatedArticles, setRelatedArticles] = useState([])
+  
+  // Function to append new articles to the feed (curate/accumulate)
+  const handleRelatedNewsUpdate = (newArticles) => {
+    if (newArticles && newArticles.length > 0) {
+      setRelatedArticles(prev => {
+        // Filter out duplicates based on URL
+        const existingUrls = new Set(prev.map(article => article.url).filter(Boolean))
+        const uniqueNewArticles = newArticles.filter(article => 
+          !article.url || !existingUrls.has(article.url)
+        )
+        return [...prev, ...uniqueNewArticles]
+      })
+    }
+  }
 
   const handleOpenReadingLevelModal = () => setIsReadingLevelModalOpen(true)
   const handleCloseReadingLevelModal = () => setIsReadingLevelModalOpen(false)
@@ -30,8 +46,14 @@ function App() {
   return (
     <div className="App">
       <Navbar />
-      <Hero onAdjustReadingLevel={handleOpenReadingLevelModal} />
+      <Hero />
       <About />
+      <Chatbot 
+        readingLevel={readingLevel}
+        onAdjustReadingLevel={handleOpenReadingLevelModal}
+        onRelatedNewsUpdate={handleRelatedNewsUpdate}
+      />
+      <NewsFeed articles={relatedArticles} readingLevel={readingLevel} />
       <Features 
         onAdjustReadingLevel={handleOpenReadingLevelModal}
         onOpenAccessibleLanguage={handleOpenAccessibleLanguageModal}
@@ -53,7 +75,6 @@ function App() {
           onClose={handleCloseAccessibleLanguageModal}
         />
       )}
-      <Chatbot />
     </div>
   )
 }

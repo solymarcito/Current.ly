@@ -1,14 +1,7 @@
 import Logo from '../Logo/Logo'
 import './Hero.css'
 
-const Hero = ({ onAdjustReadingLevel }) => {
-  const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
-
+const Hero = () => {
   return (
     <section id="home" className="hero">
       <div className="container">
@@ -25,20 +18,6 @@ const Hero = ({ onAdjustReadingLevel }) => {
             remove bias and complexity from today's media environment. Current.ly will provide 
             neutral, easy to read summaries of top stories, keeping users informed and not overwhelmed.
           </p>
-          <div className="hero-buttons">
-            <button 
-              className="btn btn-primary" 
-              onClick={() => scrollToSection('features')}
-            >
-              See More Topics
-            </button>
-            <button 
-              className="btn btn-secondary" 
-              onClick={onAdjustReadingLevel}
-            >
-              Adjust Reading Level
-            </button>
-          </div>
         </div>
       </div>
     </section>

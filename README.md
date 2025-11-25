@@ -33,11 +33,13 @@ npm install
 
 2. Set up environment variables:
    - Create a `.env` file in the root directory
-   - Add your Perplexity API key:
+   - Add your API keys:
    ```
    VITE_PERPLEXITY_API_KEY=your_perplexity_api_key_here
+   VITE_RAPIDAPI_KEY=your_rapidapi_key_here
    ```
-   - Get your API key from: https://www.perplexity.ai/settings/account
+   - Get your Perplexity API key from: https://www.perplexity.ai/settings/account
+   - Get your RapidAPI key from: https://rapidapi.com/ (for political bias database)
 
 3. Start the development server:
 ```bash
