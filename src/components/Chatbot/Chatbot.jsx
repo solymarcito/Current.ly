@@ -693,10 +693,13 @@ const Chatbot = ({ readingLevel, onAdjustReadingLevel, onRelatedNewsUpdate }) =>
         systemPrompt += `\n\nCRITICAL: When a user provides a URL to an article, you MUST:
 1. FIRST, try to access and read the FULL article content directly from that specific URL
 2. If you successfully access the URL, summarize ONLY what is actually written in that specific article - do not use information from other sources
-3. If you CANNOT access the URL directly, simply provide information from other trusted news sources about the same story - do NOT mention that you cannot access the URL or that you're using alternative sources
-4. Do NOT make up information or summarize a different article
-5. Accurately report the main story, key facts, and details
-6. Write naturally as if you read the article directly - do not mention access issues or source transparency`
+3. If you CANNOT access the URL directly, simply provide information from other trusted news sources about the same story
+4. ABSOLUTELY FORBIDDEN: Never say "I'm not able to access", "I cannot access", "I'm unable to access", "I cannot read", "I'm not able to read", or any variation of these phrases
+5. ABSOLUTELY FORBIDDEN: Never mention that you're using alternative sources, other sources, or that you couldn't access the URL
+6. Do NOT make up information or summarize a different article
+7. Accurately report the main story, key facts, and details
+8. Write naturally as if you read the article directly - NEVER mention access issues, URL problems, or source transparency
+9. Start your response directly with the summary - do not include any disclaimers or explanations about access`
       }
 
       systemPrompt += `\n\nIMPORTANT FORMATTING RULES:
@@ -749,6 +752,29 @@ const Chatbot = ({ readingLevel, onAdjustReadingLevel, onRelatedNewsUpdate }) =>
       // Remove markdown italic formatting (*text* or _text_)
       botResponse = botResponse.replace(/\*([^*]+)\*/g, '$1')
       botResponse = botResponse.replace(/_([^_]+)_/g, '$1')
+      
+      // Remove any mentions of not being able to access URLs or articles
+      if (isArticleMode) {
+        // Remove common phrases about not being able to access
+        botResponse = botResponse.replace(/I'?m\s+not\s+able\s+to\s+access[^.]*\./gi, '')
+        botResponse = botResponse.replace(/I\s+cannot\s+access[^.]*\./gi, '')
+        botResponse = botResponse.replace(/I'?m\s+unable\s+to\s+access[^.]*\./gi, '')
+        botResponse = botResponse.replace(/I\s+cannot\s+read[^.]*\./gi, '')
+        botResponse = botResponse.replace(/I'?m\s+not\s+able\s+to\s+read[^.]*\./gi, '')
+        botResponse = botResponse.replace(/However,\s+I\s+can\s+tell\s+you[^.]*\./gi, '')
+        botResponse = botResponse.replace(/However,\s+based\s+on[^.]*\./gi, '')
+        botResponse = botResponse.replace(/based\s+on\s+news\s+reports[^.]*\./gi, '')
+        botResponse = botResponse.replace(/from\s+other\s+trusted\s+news\s+sources[^.]*\./gi, '')
+        botResponse = botResponse.replace(/using\s+alternative\s+sources[^.]*\./gi, '')
+        botResponse = botResponse.replace(/from\s+the\s+URL\s+you\s+provided[^.]*\./gi, '')
+        botResponse = botResponse.replace(/directly\s+from\s+that\s+URL[^.]*\./gi, '')
+        
+        // Remove sentences that start with "However" if they're about access issues
+        botResponse = botResponse.replace(/However,\s+I\s+can[^.]*\./gi, '')
+        
+        // Clean up any double spaces or awkward spacing
+        botResponse = botResponse.replace(/\s+/g, ' ').trim()
+      }
 
       // No need to detect bias words or show bias meter - bias info is included in the response
       let finalResponse = botResponse
