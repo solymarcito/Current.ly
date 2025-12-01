@@ -61,124 +61,87 @@ const GlobalCoverage = ({ topic, question, readingLevel = 'middle' }) => {
     'Tanzania': 'Tanzanian news sources like The Citizen, Daily News Tanzania'
   }
 
-  const fetchCountryHeadlines = async (country) => {
-    console.log('📰 fetchCountryHeadlines called for:', country)
-    setIsLoadingHeadlines(true)
-    setError(null)
+  // Map countries to their expected news domain patterns (for validation)
+  const countryNewsDomains = {
+    'United States': ['cnn.com', 'bbc.com', 'reuters.com', 'nytimes.com', 'washingtonpost.com', 'wsj.com', 'usatoday.com', 'abcnews.go.com', 'nbcnews.com', 'cbsnews.com', 'foxnews.com', 'ap.org'],
+    'United Kingdom': ['bbc.co.uk', 'theguardian.com', 'thetimes.co.uk', 'telegraph.co.uk', 'independent.co.uk', 'dailymail.co.uk', 'sky.com', 'itv.com'],
+    'Canada': ['cbc.ca', 'theglobeandmail.com', 'ctvnews.ca', 'nationalpost.com', 'cbcnews.ca'],
+    'Germany': ['spiegel.de', 'dw.com', 'ard.de', 'zdf.de', 'sueddeutsche.de', 'faz.net', 'welt.de'],
+    'France': ['lemonde.fr', 'france24.com', 'lefigaro.fr', 'liberation.fr', 'franceinfo.fr'],
+    'Spain': ['elpais.com', 'elmundo.es', 'abc.es', 'rtve.es', 'lavanguardia.com'],
+    'Italy': ['repubblica.it', 'corriere.it', 'ansa.it', 'ilsole24ore.com'],
+    'Japan': ['nhk.or.jp', 'japantimes.co.jp', 'asahi.com', 'mainichi.jp', 'yomiuri.co.jp'],
+    'China': ['xinhuanet.com', 'chinadaily.com.cn', 'scmp.com', 'people.com.cn'],
+    'India': ['timesofindia.com', 'hindustantimes.com', 'thehindu.com', 'indiatimes.com', 'ndtv.com'],
+    'Australia': ['abc.net.au', 'smh.com.au', 'theaustralian.com.au', 'news.com.au'],
+    'Brazil': ['folha.uol.com.br', 'oglobo.globo.com', 'estadao.com.br', 'g1.globo.com'],
+    'Mexico': ['eluniversal.com.mx', 'reforma.com', 'jornada.com.mx', 'milenio.com'],
+    'Russia': ['rt.com', 'tass.com', 'interfax.ru', 'ria.ru', 'kommersant.ru', 'gazeta.ru'],
+    'South Africa': ['news24.com', 'mg.co.za', 'businesslive.co.za'],
+    'Nigeria': ['premiumtimesng.com', 'vanguardngr.com', 'thisdaylive.com', 'punchng.com'],
+    'Kenya': ['nation.co.ke', 'standardmedia.co.ke', 'businessdailyafrica.com'],
+    'Netherlands': ['nos.nl', 'telegraaf.nl', 'volkskrant.nl', 'nrc.nl'],
+    'Sweden': ['svt.se', 'dn.se', 'aftonbladet.se', 'expressen.se'],
+    'Poland': ['wyborcza.pl', 'rp.pl', 'tvn24.pl', 'onet.pl'],
+    'Turkey': ['hurriyet.com.tr', 'sabah.com.tr', 'aa.com.tr', 'sozcu.com.tr'],
+    'Israel': ['haaretz.com', 'jpost.com', 'ynet.co.il', 'timesofisrael.com'],
+    'South Korea': ['yna.co.kr', 'koreatimes.co.kr', 'chosun.com', 'joongang.co.kr'],
+    'Vietnam': ['vnexpress.net', 'tuoitre.vn', 'thanhnien.vn'],
+    'Philippines': ['inquirer.net', 'abs-cbn.com', 'gmanetwork.com'],
+    'Indonesia': ['kompas.com', 'detik.com', 'tempo.co'],
+    'Argentina': ['clarin.com', 'lanacion.com.ar', 'infobae.com'],
+    'Chile': ['emol.com', 'latercera.com', 'cnnchile.com'],
+    'Colombia': ['eltiempo.com', 'semana.com', 'elespectador.com'],
+    'Peru': ['elcomercio.pe', 'larepublica.pe', 'rpp.pe'],
+    'Venezuela': ['elnacional.com', 'ultimasnoticias.com.ve'],
+    'Greece': ['kathimerini.gr', 'tanea.gr', 'tovima.gr'],
+    'Hungary': ['magyarnemzet.hu', 'index.hu', 'hvg.hu'],
+    'Lebanon': ['dailystar.com.lb', 'lorientlejour.com', 'annahar.com'],
+    'Jordan': ['jordantimes.com', 'alghad.com', 'ammonnews.net'],
+    'Tunisia': ['tap.info.tn', 'lapresse.tn'],
+    'Senegal': ['lesoleil.sn', 'sudonline.sn'],
+    'Ghana': ['graphic.com.gh', 'ghanaiantimes.com.gh', 'myjoyonline.com'],
+    'Tanzania': ['thecitizen.co.tz', 'dailynews.co.tz']
+  }
+
+  // Check if a URL belongs to a country's news sources
+  const isUrlFromCountry = (url, country) => {
+    if (!url || !country) return true // If no country specified, allow it (fallback)
     
     try {
-      console.log('📰 Starting API call for:', country)
-      const apiKey = import.meta.env.VITE_PERPLEXITY_API_KEY
-      if (!apiKey) {
-        throw new Error('API key not configured')
-      }
-
-      // Build the search query
-      const searchQuery = topic || question || 'current international news'
-      const countryContext = countryNewsSources[country] || `news sources from ${country}`
+      const urlObj = new URL(url)
+      const hostname = urlObj.hostname.toLowerCase().replace('www.', '')
+      const expectedDomains = countryNewsDomains[country] || []
       
-      const readingLevelContext = {
-        'elementary': 'Use the simplest language possible, with short sentences and basic vocabulary suitable for grades 1-3.',
-        'middle': 'Use clear, straightforward language with moderate complexity suitable for grades 4-6.',
-        'high': 'Use standard news language suitable for grades 7-9.',
-        'adult': 'Use full complexity and original source language suitable for grade 10 and above.'
-      }
-
-      const prompt = `You are Current.ly, an AI news assistant. ${readingLevelContext[readingLevel] || readingLevelContext['middle']}
-
-Find 2-3 recent REAL news headlines and articles from ${countryContext} about: ${searchQuery}
-
-CRITICAL REQUIREMENTS:
-- Only provide URLs that you have actually found and verified exist
-- Do NOT make up or guess URLs
-- Only include URLs if you can cite them from actual sources
-- If you cannot find a real URL, do NOT include a URL field for that article
-- Use the citations from your search results to provide accurate URLs
-
-For each article, provide:
-1. The headline/title (must be real and recent)
-2. A brief 1-2 sentence summary
-3. The publication/source name (must be accurate)
-4. URL: [ONLY if you have a verified, real URL from your search - otherwise omit this line entirely]
-
-Format:
-Headline: [Article Headline]
-Summary: [1-2 sentence summary]
-Source: [Publication Name]
-URL: [ONLY real, verified URL - omit if not available]
-
-Write in plain text, no markdown, no bullet points. Focus on how ${country} media reports on this topic. Only include articles you can verify with real sources.`
-
-      const response = await fetch('https://api.perplexity.ai/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'sonar',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a helpful assistant that finds and summarizes news articles from different countries. Always provide real, verified URLs from actual sources. Never make up or guess URLs.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.3,
-          max_tokens: 1000,
-          return_citations: true,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
-      }
-
-      const data = await response.json()
-      let headlinesText = data.choices[0]?.message?.content || ''
-      
-      // Extract citations if available (Perplexity may provide real URLs here)
-      // Citations might be in different formats depending on the API version
-      let citationUrls = []
-      if (data.citations && Array.isArray(data.citations)) {
-        citationUrls = data.citations.map(citation => {
-          if (typeof citation === 'string') return citation
-          return citation.url || citation.link || citation
-        }).filter(Boolean)
+      // If we don't have domain mappings for this country, allow the URL (fallback)
+      if (expectedDomains.length === 0) {
+        return true
       }
       
-      // Also check for citations in the response metadata
-      if (data.response_metadata?.citations) {
-        const metadataCitations = data.response_metadata.citations.map(c => c.url || c).filter(Boolean)
-        citationUrls = [...citationUrls, ...metadataCitations]
-      }
-      
-      // Clean up the response
-      headlinesText = headlinesText.replace(/\[\d+\]/g, '')
-      headlinesText = headlinesText.replace(/\*\*([^*]+)\*\*/g, '$1')
-      headlinesText = headlinesText.replace(/\*([^*]+)\*/g, '$1')
-      
-      // Parse headlines from the response
-      const headlines = parseHeadlines(headlinesText, citationUrls)
-      
-      setCountryHeadlines({
-        country,
-        headlines,
-        rawText: headlinesText
+      // Check if the hostname matches any expected domain for this country
+      const matches = expectedDomains.some(domain => {
+        const domainClean = domain.toLowerCase().replace('www.', '')
+        return hostname === domainClean || hostname.endsWith('.' + domainClean)
       })
       
-      // Mark this country as having coverage
-      if (headlines.length > 0) {
-        setCountriesWithCoverage(prev => new Set([...prev, country]))
-      }
-    } catch (err) {
-      console.error('Error fetching country headlines:', err)
-      setError(`Unable to fetch headlines from ${country}. Please try again.`)
-    } finally {
-      setIsLoadingHeadlines(false)
+      // If it matches, return true
+      if (matches) return true
+      
+      // If it doesn't match, check if it's from a known OTHER country's domain (reject those)
+      // This prevents cross-country contamination
+      const otherCountryDomains = Object.values(countryNewsDomains).flat()
+      const isFromOtherCountry = otherCountryDomains.some(domain => {
+        const domainClean = domain.toLowerCase().replace('www.', '')
+        return hostname === domainClean || hostname.endsWith('.' + domainClean)
+      })
+      
+      // If it's from another known country, reject it
+      if (isFromOtherCountry) return false
+      
+      // If we can't determine, allow it (might be a valid source we don't have in our list)
+      return true
+    } catch (e) {
+      return false
     }
   }
 
@@ -198,7 +161,6 @@ Write in plain text, no markdown, no bullet points. Focus on how ${country} medi
         /test\.com/i,
         /localhost/i,
         /\.\.\./i, // URLs with multiple dots in domain
-        /^https?:\/\/[^\/]+\/?$/, // Just domain with no path (often fake)
       ]
       
       if (fakePatterns.some(pattern => pattern.test(url))) return false
@@ -206,13 +168,186 @@ Write in plain text, no markdown, no bullet points. Focus on how ${country} medi
       // Must have a valid domain
       if (!urlObj.hostname || urlObj.hostname.length < 4) return false
       
+      // Reject URLs that are just homepages or category pages (must have a path with content)
+      // Homepage patterns to reject
+      const homepagePatterns = [
+        /^https?:\/\/[^\/]+\/?$/, // Just domain with no path or just /
+        /^https?:\/\/[^\/]+\/index\.(html|php|aspx?)$/i, // Index pages
+        /^https?:\/\/[^\/]+\/home/i, // Home pages
+        /^https?:\/\/[^\/]+\/category/i, // Category pages
+        /^https?:\/\/[^\/]+\/section/i, // Section pages
+        /^https?:\/\/[^\/]+\/tag/i, // Tag pages
+      ]
+      
+      if (homepagePatterns.some(pattern => pattern.test(url))) return false
+      
+      // URL should have a meaningful path (at least some characters after domain)
+      const path = urlObj.pathname
+      if (!path || path.length < 3 || path === '/') return false
+      
       return true
     } catch (e) {
       return false
     }
   }
 
-  const parseHeadlines = (text, citationUrls = []) => {
+  const fetchCountryHeadlines = async (country) => {
+    console.log('📰 fetchCountryHeadlines called for:', country)
+    setIsLoadingHeadlines(true)
+    setError(null)
+    
+    try {
+      console.log('📰 Starting API call for:', country)
+      const apiKey = import.meta.env.VITE_PERPLEXITY_API_KEY
+      if (!apiKey) {
+        throw new Error('API key not configured')
+      }
+
+      // Build the search query - make it more specific to the country
+      let searchQuery = topic || question || 'current news'
+      const countryContext = countryNewsSources[country] || `news sources from ${country}`
+      
+      // If no specific topic/question, make the search query country-specific
+      if (!topic && !question) {
+        searchQuery = `current news from ${country}`
+      }
+      
+      const readingLevelContext = {
+        'elementary': 'Use the simplest language possible, with short sentences and basic vocabulary suitable for grades 1-3.',
+        'middle': 'Use clear, straightforward language with moderate complexity suitable for grades 4-6.',
+        'high': 'Use standard news language suitable for grades 7-9.',
+        'adult': 'Use full complexity and original source language suitable for grade 10 and above.'
+      }
+
+      // Get specific news sources for this country
+      const specificSources = countryNewsSources[country] || `news sources from ${country}`
+      const expectedDomains = countryNewsDomains[country] || []
+      const domainList = expectedDomains.length > 0 ? expectedDomains.join(', ') : 'local news websites'
+
+      const prompt = `You are Current.ly, an AI news assistant. ${readingLevelContext[readingLevel] || readingLevelContext['middle']}
+
+CRITICAL: Find 2-3 recent REAL news headlines and articles FROM ${specificSources} about: ${searchQuery}
+
+ABSOLUTELY MANDATORY REQUIREMENTS:
+- The articles MUST be from news sources BASED IN ${country} ONLY
+- Acceptable sources include: ${domainList}
+- Do NOT include articles from The Times of India, BBC, CNN, Reuters, or any other country's news sources
+- If you cannot find articles from ${country} news sources, return fewer articles or none - DO NOT use other countries' sources
+- The publication/source name MUST be a ${country} news organization (e.g., ${expectedDomains.slice(0, 3).join(', ')})
+- ALL summaries and descriptions MUST be written in ENGLISH, regardless of the source language
+- CRITICAL URL REQUIREMENT: ONLY include URLs that are in your search citations/sources AND are from ${country} news websites
+- Do NOT write URLs in the text - the system will extract URLs from your citations automatically
+- If you do not have a citation URL from a ${country} news source for an article, do NOT include that article
+- URLs MUST be direct links to the specific article/headline (not homepage, not category pages)
+- Do NOT make up, guess, or construct URLs - only use URLs from your actual search results/citations
+- VERIFY that each URL is from a ${country} news website before including it
+
+For each article, provide:
+1. The headline/title (must be real and recent, from a ${country} news source ONLY)
+2. A brief 1-2 sentence summary IN ENGLISH (translate if necessary)
+3. The publication/source name (must be a ${country} news organization - verify this!)
+4. DO NOT include a URL line - URLs will be extracted from your citations
+
+Format:
+Headline: [Article Headline]
+Summary: [1-2 sentence summary IN ENGLISH]
+Source: [${country} Publication Name - MUST be from ${country}]
+
+Write in plain text, no markdown, no bullet points. ONLY include articles from ${country} news sources. DO NOT include articles from other countries' media like The Times of India, BBC, CNN, etc. ALL summaries must be in ENGLISH. DO NOT include URL lines - URLs come from citations.`
+
+      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'sonar',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a helpful assistant that finds and summarizes news articles from specific countries. CRITICAL REQUIREMENTS: 1) When asked for news from a country, you MUST only return articles from news sources BASED IN that country. 2) ALL summaries must be written in ENGLISH, regardless of source language. 3) URLs must be direct links to the specific article (not homepage or category pages). 4) Only provide URLs you have verified exist and link directly to the article. Never make up or guess URLs.`
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 1000,
+          return_citations: true,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      let headlinesText = data.choices[0]?.message?.content || ''
+      
+      // Extract citations if available (Perplexity provides real URLs here - these are more reliable)
+      // Citations might be in different formats depending on the API version
+      let citationUrls = []
+      
+      // Check for citations in the response (most reliable source)
+      // Don't filter by country here - we'll do that when matching to headlines
+      if (data.citations && Array.isArray(data.citations)) {
+        citationUrls = data.citations.map(citation => {
+          if (typeof citation === 'string') return citation
+          return citation.url || citation.link || citation
+        }).filter(Boolean)
+          .filter(url => isValidUrl(url)) // Only keep valid URLs
+      }
+      
+      // Also check for citations in the response metadata
+      if (data.response_metadata?.citations) {
+        const metadataCitations = data.response_metadata.citations
+          .map(c => c.url || c)
+          .filter(Boolean)
+          .filter(url => isValidUrl(url)) // Only keep valid URLs
+        citationUrls = [...citationUrls, ...metadataCitations]
+      }
+      
+      // Also check for citations in the choices (some API versions put them here)
+      if (data.choices?.[0]?.citations) {
+        const choiceCitations = data.choices[0].citations
+          .map(c => c.url || c.link || c)
+          .filter(Boolean)
+          .filter(url => isValidUrl(url))
+        citationUrls = [...citationUrls, ...choiceCitations]
+      }
+      
+      // Remove duplicates
+      citationUrls = [...new Set(citationUrls)]
+      
+      // Clean up the response
+      headlinesText = headlinesText.replace(/\[\d+\]/g, '')
+      headlinesText = headlinesText.replace(/\*\*([^*]+)\*\*/g, '$1')
+      headlinesText = headlinesText.replace(/\*([^*]+)\*/g, '$1')
+      
+      // Parse headlines from the response
+      const headlines = parseHeadlines(headlinesText, citationUrls, country)
+      
+      setCountryHeadlines({
+        country,
+        headlines,
+        rawText: headlinesText
+      })
+      
+      // Mark this country as having coverage
+      if (headlines.length > 0) {
+        setCountriesWithCoverage(prev => new Set([...prev, country]))
+      }
+    } catch (err) {
+      console.error('Error fetching country headlines:', err)
+      setError(`Unable to fetch headlines from ${country}. Please try again.`)
+    } finally {
+      setIsLoadingHeadlines(false)
+    }
+  }
+
+  const parseHeadlines = (text, citationUrls = [], country = null) => {
     const headlines = []
     const headlinePattern = /Headline:\s*(.+?)(?=\n|Summary:|$)/gi
     const summaryPattern = /Summary:\s*(.+?)(?=\n|Source:|Headline:|$)/gi
@@ -228,16 +363,58 @@ Write in plain text, no markdown, no bullet points. Focus on how ${country} medi
       const headline = headlinesMatches[i]?.[1]?.trim()
       const summary = summariesMatches[i]?.[1]?.trim()
       const source = sourcesMatches[i]?.[1]?.trim()
-      let url = urlsMatches[i]?.[1]?.trim()
+      let url = null
       
-      // If no URL in text but we have citations, try to use citation URL
-      if (!url && citationUrls[i]) {
-        url = citationUrls[i]
+      // PRIORITIZE citations over URLs in text (citations are more reliable)
+      // Try to match citation URLs to headlines based on source or order
+      // IMPORTANT: Only use citations that are from this country's news sources
+      if (citationUrls.length > 0) {
+        // First, try to use citation URL at the same index (already filtered by country)
+        if (citationUrls[i] && isValidUrl(citationUrls[i]) && isUrlFromCountry(citationUrls[i], country)) {
+          url = citationUrls[i]
+        } else {
+          // Try to find a citation URL that matches the source domain
+          if (source) {
+            const sourceLower = source.toLowerCase()
+            const matchingCitation = citationUrls.find(citationUrl => {
+              if (!isUrlFromCountry(citationUrl, country)) return false
+              try {
+                const citationDomain = new URL(citationUrl).hostname.toLowerCase()
+                return citationDomain.includes(sourceLower) || sourceLower.includes(citationDomain.replace('www.', ''))
+              } catch {
+                return false
+              }
+            })
+            if (matchingCitation && isValidUrl(matchingCitation) && isUrlFromCountry(matchingCitation, country)) {
+              url = matchingCitation
+            }
+          }
+        }
       }
       
-      // Validate URL - only include if it's valid
+      // Fallback: use URL from text if no citation found (but validate it's from the country)
+      if (!url && urlsMatches[i]) {
+        const textUrl = urlsMatches[i]?.[1]?.trim()
+        if (textUrl && isValidUrl(textUrl) && isUrlFromCountry(textUrl, country)) {
+          url = textUrl
+        }
+      }
+      
+      // Final validation - only include if it's valid
+      // Check country match, but be more lenient - if URL is valid and we can't determine it's from wrong country, allow it
       if (url && !isValidUrl(url)) {
         url = null // Remove invalid URLs
+      } else if (url && country && !isUrlFromCountry(url, country)) {
+        // Only reject if we're certain it's from the wrong country
+        console.log(`Rejecting URL ${url} for country ${country} - doesn't match expected domains`)
+        url = null
+      }
+      
+      // Debug: log if we have a valid URL
+      if (url) {
+        console.log(`✅ Valid URL for ${country}: ${url}`)
+      } else if (headline && summary) {
+        console.log(`⚠️ No URL for headline: ${headline}`)
       }
 
       if (headline && summary) {
@@ -358,6 +535,17 @@ Write in plain text, no markdown, no bullet points. Focus on how ${country} medi
         {countryHeadlines && countryHeadlines.headlines.length > 0 && (
           <div className="country-headlines">
             <h4>Headlines from {countryHeadlines.country}:</h4>
+            <div className="headlines-disclaimer" style={{ 
+              marginBottom: '15px', 
+              padding: '12px', 
+              background: '#fef3c7', 
+              borderLeft: '3px solid #f59e0b',
+              borderRadius: '4px',
+              fontSize: '0.875rem',
+              color: '#92400e'
+            }}>
+              <strong>Note:</strong> Not all links are guaranteed to work. If a link doesn't work, try copying and pasting the headline title into the news outlet's search function.
+            </div>
             <div className="headlines-list">
               {countryHeadlines.headlines.map((item, index) => (
                 <div key={index} className="headline-item">
