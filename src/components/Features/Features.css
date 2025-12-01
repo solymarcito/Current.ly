@@ -58,6 +58,31 @@
   overflow: visible;
 }
 
+.future-steps {
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-2xl);
+  border-top: 2px solid var(--border-color);
+}
+
+.future-steps .section-title {
+  color: var(--text-light);
+  font-size: 1.75rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+.future-steps .feature-item {
+  opacity: 0.85;
+  border-left: 3px solid var(--text-light);
+}
+
+.future-steps .feature-content h3 {
+  color: var(--text-light);
+}
+
+.feature-item-with-demo {
+  overflow: visible;
+}
+
 @media (max-width: 768px) {
   .feature-item {
     padding: var(--spacing-md);

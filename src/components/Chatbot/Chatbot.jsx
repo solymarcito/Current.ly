@@ -593,8 +593,8 @@ const Chatbot = ({ readingLevel, onAdjustReadingLevel, onRelatedNewsUpdate }) =>
     //   question += ` Additionally, include information about the article's bias level. Based on the source, this publication has a bias rating of: ${biasInfo.bias}. ${biasInfo.reliability ? `Reliability rating: ${biasInfo.reliability}.` : ''} Please mention this bias information naturally in your summary.`
     // }
     
-    // Check if article topic is international
-    const showGlobalCoverage = isInternationalTopic(null, question)
+    // For article breakdown, don't show global coverage - just focus on the article
+    const showGlobalCoverage = false
     
     // Create a synthetic event and call handleSendMessage with article mode flag
     const syntheticEvent = {
@@ -802,10 +802,11 @@ const Chatbot = ({ readingLevel, onAdjustReadingLevel, onRelatedNewsUpdate }) =>
       setIsLoading(false)
 
       // After the main response, fetch similar news articles (in background, no loading indicator)
-      if (isArticleMode || currentInput.toLowerCase().includes("what's new") || currentInput.toLowerCase().includes("tell me about")) {
+      // BUT NOT for article breakdown mode - article mode should ONLY break down the article, nothing else
+      if (!isArticleMode && (currentInput.toLowerCase().includes("what's new") || currentInput.toLowerCase().includes("tell me about"))) {
         // Extract topic/keywords from the user's question
         let searchQuery = ''
-        if (isArticleMode) {
+        if (false) { // Removed article mode from similar articles fetch
           // For articles, use the article topic
           searchQuery = `Find 2-3 similar or related news articles about the same topic as: ${currentInput}. Provide brief summaries of each article.`
         } else {
