@@ -33,9 +33,14 @@ const Navbar = () => {
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="container">
-        <div className="nav-brand">
+        <a 
+          href="#home" 
+          onClick={(e) => handleNavClick(e, 'home')}
+          className="nav-brand"
+          style={{ textDecoration: 'none', cursor: 'pointer' }}
+        >
           <Logo size="small" />
-        </div>
+        </a>
         <ul className={`nav-menu ${isOpen ? 'open' : ''}`}>
           <li><a href="#home" onClick={(e) => handleNavClick(e, 'home')}>Home</a></li>
           <li><a href="#chatbot" onClick={(e) => handleNavClick(e, 'chatbot')}>Try AI</a></li>

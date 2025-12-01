@@ -24,6 +24,13 @@
 .nav-brand {
   display: flex;
   align-items: center;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.nav-brand:hover {
+  opacity: 0.8;
 }
 
 .nav-menu {

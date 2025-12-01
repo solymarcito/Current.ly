@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Navbar from './components/Navbar/Navbar'
 import Hero from './components/Hero/Hero'
 import About from './components/About/About'
@@ -15,6 +15,17 @@ import NewsFeed from './components/NewsFeed/NewsFeed'
 import './App.css'
 
 function App() {
+  // Ensure page always starts at the top, even if there's a hash in the URL
+  useEffect(() => {
+    // Scroll to top on initial load
+    window.scrollTo(0, 0)
+    
+    // Remove hash from URL if present (but don't trigger scroll)
+    if (window.location.hash) {
+      // Use replaceState to remove hash without triggering scroll
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+  }, [])
   const [isReadingLevelModalOpen, setIsReadingLevelModalOpen] = useState(false)
   const [isAccessibleLanguageModalOpen, setIsAccessibleLanguageModalOpen] = useState(false)
   const [readingLevel, setReadingLevel] = useState('middle')
