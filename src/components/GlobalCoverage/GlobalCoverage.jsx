@@ -86,21 +86,28 @@ const GlobalCoverage = ({ topic, question, readingLevel = 'middle' }) => {
 
       const prompt = `You are Current.ly, an AI news assistant. ${readingLevelContext[readingLevel] || readingLevelContext['middle']}
 
-Find 2-3 recent news headlines and articles from ${countryContext} about: ${searchQuery}
+Find 2-3 recent REAL news headlines and articles from ${countryContext} about: ${searchQuery}
+
+CRITICAL REQUIREMENTS:
+- Only provide URLs that you have actually found and verified exist
+- Do NOT make up or guess URLs
+- Only include URLs if you can cite them from actual sources
+- If you cannot find a real URL, do NOT include a URL field for that article
+- Use the citations from your search results to provide accurate URLs
 
 For each article, provide:
-1. The headline/title
+1. The headline/title (must be real and recent)
 2. A brief 1-2 sentence summary
-3. The publication/source name
-4. If available, a URL to the article
+3. The publication/source name (must be accurate)
+4. URL: [ONLY if you have a verified, real URL from your search - otherwise omit this line entirely]
 
 Format:
 Headline: [Article Headline]
 Summary: [1-2 sentence summary]
 Source: [Publication Name]
-URL: [Article URL if available]
+URL: [ONLY real, verified URL - omit if not available]
 
-Write in plain text, no markdown, no bullet points. Focus on how ${country} media reports on this topic.`
+Write in plain text, no markdown, no bullet points. Focus on how ${country} media reports on this topic. Only include articles you can verify with real sources.`
 
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
@@ -113,15 +120,16 @@ Write in plain text, no markdown, no bullet points. Focus on how ${country} medi
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful assistant that finds and summarizes news articles from different countries.'
+              content: 'You are a helpful assistant that finds and summarizes news articles from different countries. Always provide real, verified URLs from actual sources. Never make up or guess URLs.'
             },
             {
               role: 'user',
               content: prompt
             }
           ],
-          temperature: 0.7,
-          max_tokens: 800,
+          temperature: 0.3,
+          max_tokens: 1000,
+          return_citations: true,
         }),
       })
 
@@ -132,13 +140,29 @@ Write in plain text, no markdown, no bullet points. Focus on how ${country} medi
       const data = await response.json()
       let headlinesText = data.choices[0]?.message?.content || ''
       
+      // Extract citations if available (Perplexity may provide real URLs here)
+      // Citations might be in different formats depending on the API version
+      let citationUrls = []
+      if (data.citations && Array.isArray(data.citations)) {
+        citationUrls = data.citations.map(citation => {
+          if (typeof citation === 'string') return citation
+          return citation.url || citation.link || citation
+        }).filter(Boolean)
+      }
+      
+      // Also check for citations in the response metadata
+      if (data.response_metadata?.citations) {
+        const metadataCitations = data.response_metadata.citations.map(c => c.url || c).filter(Boolean)
+        citationUrls = [...citationUrls, ...metadataCitations]
+      }
+      
       // Clean up the response
       headlinesText = headlinesText.replace(/\[\d+\]/g, '')
       headlinesText = headlinesText.replace(/\*\*([^*]+)\*\*/g, '$1')
       headlinesText = headlinesText.replace(/\*([^*]+)\*/g, '$1')
       
       // Parse headlines from the response
-      const headlines = parseHeadlines(headlinesText)
+      const headlines = parseHeadlines(headlinesText, citationUrls)
       
       setCountryHeadlines({
         country,
@@ -158,7 +182,37 @@ Write in plain text, no markdown, no bullet points. Focus on how ${country} medi
     }
   }
 
-  const parseHeadlines = (text) => {
+  // Validate URL format and filter out obviously fake URLs
+  const isValidUrl = (url) => {
+    if (!url) return false
+    
+    try {
+      const urlObj = new URL(url)
+      // Check if it's a valid HTTP/HTTPS URL
+      if (!['http:', 'https:'].includes(urlObj.protocol)) return false
+      
+      // Filter out common fake URL patterns
+      const fakePatterns = [
+        /example\.com/i,
+        /placeholder/i,
+        /test\.com/i,
+        /localhost/i,
+        /\.\.\./i, // URLs with multiple dots in domain
+        /^https?:\/\/[^\/]+\/?$/, // Just domain with no path (often fake)
+      ]
+      
+      if (fakePatterns.some(pattern => pattern.test(url))) return false
+      
+      // Must have a valid domain
+      if (!urlObj.hostname || urlObj.hostname.length < 4) return false
+      
+      return true
+    } catch (e) {
+      return false
+    }
+  }
+
+  const parseHeadlines = (text, citationUrls = []) => {
     const headlines = []
     const headlinePattern = /Headline:\s*(.+?)(?=\n|Summary:|$)/gi
     const summaryPattern = /Summary:\s*(.+?)(?=\n|Source:|Headline:|$)/gi
@@ -174,14 +228,24 @@ Write in plain text, no markdown, no bullet points. Focus on how ${country} medi
       const headline = headlinesMatches[i]?.[1]?.trim()
       const summary = summariesMatches[i]?.[1]?.trim()
       const source = sourcesMatches[i]?.[1]?.trim()
-      const url = urlsMatches[i]?.[1]?.trim()
+      let url = urlsMatches[i]?.[1]?.trim()
+      
+      // If no URL in text but we have citations, try to use citation URL
+      if (!url && citationUrls[i]) {
+        url = citationUrls[i]
+      }
+      
+      // Validate URL - only include if it's valid
+      if (url && !isValidUrl(url)) {
+        url = null // Remove invalid URLs
+      }
 
       if (headline && summary) {
         headlines.push({
           headline,
           summary,
           source: source || 'News Source',
-          url: url || null
+          url: url || null // Only include valid URLs
         })
       }
     }
@@ -214,6 +278,12 @@ Write in plain text, no markdown, no bullet points. Focus on how ${country} medi
       return
     }
     
+    // Prevent duplicate clicks on the same country
+    if (selectedCountry === country && isLoadingHeadlines) {
+      console.log('🌍 Already loading headlines for this country, ignoring duplicate click')
+      return
+    }
+    
     console.log('🌍 Setting selected country to:', country)
     setSelectedCountry(country)
     setCountryHeadlines(null) // Clear previous headlines
@@ -226,13 +296,6 @@ Write in plain text, no markdown, no bullet points. Focus on how ${country} medi
   return (
     <div className="global-coverage">
       <div className="coverage-content">
-        {selectedCountry && (
-          <div className="coverage-header">
-            <p className="selected-country">
-              Viewing headlines from: <strong>{selectedCountry}</strong>
-            </p>
-          </div>
-        )}
         <div className="map-section">
           <div style={{ marginBottom: '15px', padding: '15px', background: '#f0f9ff', borderRadius: '8px', textAlign: 'center' }}>
             <p style={{ margin: 0, fontSize: '1rem', color: '#1e40af', fontWeight: '600' }}>

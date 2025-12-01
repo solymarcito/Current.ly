@@ -771,8 +771,11 @@ const Chatbot = ({ readingLevel, onAdjustReadingLevel, onRelatedNewsUpdate }) =>
       }
       
       setMessages(prev => [...prev, botMessage])
+      
+      // Set loading to false BEFORE fetching similar articles so the typing indicator disappears
+      setIsLoading(false)
 
-      // After the main response, fetch similar news articles
+      // After the main response, fetch similar news articles (in background, no loading indicator)
       if (isArticleMode || currentInput.toLowerCase().includes("what's new") || currentInput.toLowerCase().includes("tell me about")) {
         // Extract topic/keywords from the user's question
         let searchQuery = ''
@@ -928,7 +931,6 @@ IMPORTANT:
         timestamp: new Date()
       }
       setMessages(prev => [...prev, errorMessage])
-    } finally {
       setIsLoading(false)
     }
   }

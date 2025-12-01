@@ -2,7 +2,7 @@ import { useState } from 'react'
 import './FAQ.css'
 
 const FAQ = () => {
-  const [openIndex, setOpenIndex] = useState(null)
+  const [openIndices, setOpenIndices] = useState(new Set())
 
   const faqs = [
     {
@@ -19,12 +19,20 @@ const FAQ = () => {
     },
     {
       question: 'Can I access news from different countries?',
-      answer: 'Yes, Currently curates global coverage, allowing you to explore news from multiple regions and compare how stories are reported around the world.'
+      answer: 'Yes, Current.ly curates global coverage, allowing you to explore news from multiple regions and compare how stories are reported around the world.'
     }
   ]
 
   const toggleFaq = (index) => {
-    setOpenIndex(openIndex === index ? null : index)
+    setOpenIndices(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(index)) {
+        newSet.delete(index)
+      } else {
+        newSet.add(index)
+      }
+      return newSet
+    })
   }
 
   return (
@@ -32,21 +40,24 @@ const FAQ = () => {
       <div className="container">
         <h2 className="section-title">Frequently Asked Questions</h2>
         <div className="faq-list">
-          {faqs.map((faq, index) => (
-            <div key={index} className="faq-item">
-              <button
-                className={`faq-question ${openIndex === index ? 'open' : ''}`}
-                onClick={() => toggleFaq(index)}
-                aria-expanded={openIndex === index}
-              >
-                <span>{faq.question}</span>
-                <span className="faq-icon">{openIndex === index ? '−' : '+'}</span>
-              </button>
-              <div className={`faq-answer ${openIndex === index ? 'open' : ''}`}>
-                <p>{faq.answer}</p>
+          {faqs.map((faq, index) => {
+            const isOpen = openIndices.has(index)
+            return (
+              <div key={index} className="faq-item">
+                <button
+                  className={`faq-question ${isOpen ? 'open' : ''}`}
+                  onClick={() => toggleFaq(index)}
+                  aria-expanded={isOpen}
+                >
+                  <span>{faq.question}</span>
+                  <span className="faq-icon">{isOpen ? '−' : '+'}</span>
+                </button>
+                <div className={`faq-answer ${isOpen ? 'open' : ''}`}>
+                  <p>{faq.answer}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>

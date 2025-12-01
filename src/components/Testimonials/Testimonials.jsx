@@ -3,7 +3,7 @@ import './Testimonials.css'
 const Testimonials = () => {
   const testimonials = [
     "I finally understand what's happening in politics without getting overwhelmed.",
-    "Currently helped me prepare for local elections by explaining issues clearly.",
+    "Current.ly helped me prepare for local elections by explaining issues clearly.",
     "I love that I can read about global events and see how they connect to what's happening in my own country.",
     "As a non-native English speaker, the summaries make complex topics so much easier to follow."
   ]

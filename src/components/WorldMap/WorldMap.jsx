@@ -565,55 +565,7 @@ const WorldMap = ({ onCountryClick, selectedCountry, countriesWithCoverage = new
     }
   }, [selectedCountry, countriesWithCoverage, data, isoToCountryName])
 
-  // Add direct click handler to SVG paths as fallback (only if library's onClickFunction doesn't work)
-  useEffect(() => {
-    const handleSVGClick = (e) => {
-      // Find the path element (country shape)
-      let path = e.target
-      if (path.tagName !== 'path') {
-        path = e.target.closest('path')
-      }
-      
-      if (!path) {
-        return // Let the library's onClickFunction handle it
-      }
-      
-      // Try to get country code from path index matching our data array
-      const svg = path.closest('svg')
-      if (!svg) return
-      
-      const allPaths = Array.from(svg.querySelectorAll('path'))
-      const pathIndex = allPaths.indexOf(path)
-      
-      if (pathIndex >= 0 && pathIndex < data.length) {
-        const countryData = data[pathIndex]
-        const countryCode = countryData.country.toUpperCase()
-        const countryName = isoToCountryName[countryCode]
-        
-        if (countryName && onCountryClick) {
-          console.log('🚀 Direct click handler calling onCountryClick with:', countryName)
-          onCountryClick(countryName)
-        }
-      }
-    }
-
-    // Wait for map to render, then add listener
-    const timer = setTimeout(() => {
-      const mapContainer = document.querySelector('.world-map svg')
-      if (mapContainer) {
-        // Use capture phase but don't prevent default
-        mapContainer.addEventListener('click', handleSVGClick, { capture: true, passive: true })
-      }
-    }, 1000)
-
-    return () => {
-      clearTimeout(timer)
-      const mapContainer = document.querySelector('.world-map svg')
-      if (mapContainer) {
-        mapContainer.removeEventListener('click', handleSVGClick, { capture: true })
-      }
-    }
-  }, [onCountryClick, isoToCountryName, data])
+  // Removed direct click handler - using only library's onClickFunction to avoid duplicate clicks
 
   return (
     <div className="world-map-container">
@@ -625,38 +577,40 @@ const WorldMap = ({ onCountryClick, selectedCountry, countriesWithCoverage = new
             data={data}
             color="#60a5fa"
             onClickFunction={({ countryName, countryCode, countryValue }) => {
-              // Store country name in cache for tooltip use
-              // This is the SAME method we use for clicks - it's always correct!
-              if (countryCode && countryName) {
-                const code = countryCode.toUpperCase()
-                const name = countryName // Use library's name - it's correct!
-                
-                // Store in cache with both uppercase and lowercase keys
-                countryNameCache.current[code] = name
-                countryNameCache.current[code.toLowerCase()] = name
-                
-                // Also update all paths with this country code
-                const svg = document.querySelector('.world-map svg')
-                if (svg) {
-                  const paths = svg.querySelectorAll('path')
-                  const codeLower = code.toLowerCase()
-                  paths.forEach(p => {
-                    const pathId = (p.id || '').toLowerCase()
-                    // Match paths that contain this country code
-                    if (pathId.includes(`country-${codeLower}`) ||
-                        pathId.endsWith(`-${codeLower}`) ||
-                        pathId.endsWith(codeLower) ||
-                        pathId === codeLower) {
-                      p.setAttribute('data-country-name', name)
-                      p.setAttribute('data-country-code', code)
-                    }
-                  })
-                }
+              // Prevent event bubbling to avoid duplicate clicks
+              if (!countryCode || !countryName) {
+                return
               }
               
-              if (countryCode) {
-                handleCountryClick(null, countryCode.toUpperCase(), countryName)
+              // Store country name in cache for tooltip use
+              // This is the SAME method we use for clicks - it's always correct!
+              const code = countryCode.toUpperCase()
+              const name = countryName // Use library's name - it's correct!
+              
+              // Store in cache with both uppercase and lowercase keys
+              countryNameCache.current[code] = name
+              countryNameCache.current[code.toLowerCase()] = name
+              
+              // Also update all paths with this country code
+              const svg = document.querySelector('.world-map svg')
+              if (svg) {
+                const paths = svg.querySelectorAll('path')
+                const codeLower = code.toLowerCase()
+                paths.forEach(p => {
+                  const pathId = (p.id || '').toLowerCase()
+                  // Match paths that contain this country code
+                  if (pathId.includes(`country-${codeLower}`) ||
+                      pathId.endsWith(`-${codeLower}`) ||
+                      pathId.endsWith(codeLower) ||
+                      pathId === codeLower) {
+                    p.setAttribute('data-country-name', name)
+                    p.setAttribute('data-country-code', code)
+                  }
+                })
               }
+              
+              // Call the click handler with the correct country
+              handleCountryClick(null, code, name)
             }}
             tooltipBgColor="#1e293b"
             tooltipTextColor="#ffffff"
